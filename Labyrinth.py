@@ -13,36 +13,28 @@ class SolutionTracker:
     bestSolution = float("inf")
     bestPossibleSolution = -1
 
-
-labyrinth = [[".",".",".",".",".",".",".",".","."],
-            ["#",".",".",".","#",".",".",".","."],
-            [".",".",".",".","#",".",".",".","."],
-            [".","#",".",".",".",".",".","#","."],
-            [".","#",".",".",".",".",".","#","."]]
-
-#Create visited matrixes
-visitedHorizontal = [[ False for x in range(len(labyrinth[0])) ] for y in range(len(labyrinth)) ]
-visitedVertical = [[ False for x in range(len(labyrinth[0])) ] for y in range(len(labyrinth)) ]
-
-
 def solution(labyrinth):
-    visitedHorizontal[0][RODLENGTH] = True #Check initial position as visited
-    SolutionTracker.bestPossibleSolution = len(labyrinth) + len(labyrinth[0]) - 2 - RODLENGTH * 2 #Init Solution Tracker
     
-    solutionFound = SearchSolution(Node(0, RODLENGTH, True), 0) #Start recursive search with "rod" at [0,1] in Horizontal position
+    SolutionTracker.bestPossibleSolution = len(labyrinth) + len(labyrinth[0]) - 2 - RODLENGTH * 2 #Init Solution Tracker
+    #Create visited matrixes
+    SolutionTracker.visitedHorizontal = [[ False for x in range(len(labyrinth[0])) ] for y in range(len(labyrinth)) ]
+    SolutionTracker.visitedVertical = [[ False for x in range(len(labyrinth[0])) ] for y in range(len(labyrinth)) ]
+    SolutionTracker.visitedHorizontal[0][RODLENGTH] = True #Check initial position as visited
+
+    solutionFound = SearchSolution(Node(0, RODLENGTH, True), labyrinth, 0) #Start recursive search with "rod" at [0,1] in Horizontal position
     
     #Check for no solution found
     if solutionFound == float("inf"):
         solutionFound = -1
 
-    print("Best Solution: " + str(solutionFound))
+    return solutionFound
 
 
-def SearchSolution(node, moves):
+def SearchSolution(node, labyrinth, moves):
     bestSolution = float("inf")
 
     #Check for end condition (solution node)
-    if isSolution(node):
+    if isSolution(node, labyrinth):
         SolutionTracker.movesSTR += ",GOAL"
         if(moves < SolutionTracker.bestSolution):
             SolutionTracker.bestSolution = moves
@@ -59,12 +51,12 @@ def SearchSolution(node, moves):
     #Move or rotate the rod
     for action in ACTIONS:
 
-        if(not isValid(node, action)): #If the action is allowed
+        if(not isValid(node, action, labyrinth)): #If the action is allowed
             continue
 
         node.createChild(action)    #Create new node in the tree structure  
         goDeeper(node, action)
-        partial = SearchSolution(node.getChild(action), moves + 1)  #Use recursivity to search a solution node
+        partial = SearchSolution(node.getChild(action), labyrinth,  moves + 1)  #Use recursivity to search a solution node
         goBack(node.getChild(action))
 
         #Is this the best solution found yet?
@@ -87,14 +79,14 @@ def bestSolutionFound():
 
 
 #Update the SolutionTracker variables and the Visited Matrixes
-def goBack(node):
+def goBack(node, ):
     SolutionTracker.movesSTR += ",BACK"
     SolutionTracker.currentMoves -= 1
 
     if(node.horizontal):
-        visitedHorizontal[node.y][node.x] = False
+        SolutionTracker.visitedHorizontal[node.y][node.x] = False
     else:
-        visitedVertical[node.y][node.x] = False
+        SolutionTracker.visitedVertical[node.y][node.x] = False
 
 
 #Update the SolutionTracker variables and the Visited Matrixes
@@ -104,13 +96,13 @@ def goDeeper(node,action):
     SolutionTracker.totalMoves += 1
 
     if(node.horizontal):
-        visitedHorizontal[node.y][node.x] = True
+        SolutionTracker.visitedHorizontal[node.y][node.x] = True
     else:
-        visitedVertical[node.y][node.x] = True
+        SolutionTracker.visitedVertical[node.y][node.x] = True
     
 
 # Check if the current rod position is a valid solution 
-def isSolution(node):
+def isSolution(node, labyrinth):
     fx = len(labyrinth[0])-1    #Goal position X
     fy = len(labyrinth)-1       #Goal position Y
 
@@ -128,7 +120,7 @@ def isSolution(node):
 # Checks if the resulting position will collide with any walls or obstacles,
 # if the rotation action has enough space available and
 # if the resulting position has been visited before
-def isValid(node, action):
+def isValid(node, action, labyrinth):
     #Current position
     horizontal = node.horizontal
     x = node.x
@@ -178,12 +170,17 @@ def isValid(node, action):
         if(labyrinth[yi][x] == "#"):
             return False    
 
-    if(horizontal and visitedHorizontal[y][x]):     #Has been visited in horizontal position
+    if(horizontal and SolutionTracker.visitedHorizontal[y][x]):     #Has been visited in horizontal position
         return False
-    elif(not horizontal and visitedVertical[y][x]): #Has been visited in vertical position
+    elif(not horizontal and SolutionTracker.visitedVertical[y][x]): #Has been visited in vertical position
         return False
 
     return True
 
+#labyrinth = [[".",".",".",".",".",".",".",".","."],
+#            ["#",".",".",".","#",".",".",".","."],
+#            [".",".",".",".","#",".",".",".","."],
+#            [".","#",".",".",".",".",".","#","."],
+#            [".","#",".",".",".",".",".","#","."]]
 
-solution(labyrinth)
+#print(solution(labyrinth))
