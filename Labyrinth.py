@@ -2,51 +2,80 @@ from Node import Node
 
 #Performable actions ordered by preference. Not mutable during runtime.
 ACTIONS = ("down", "right", "rotate", "up", "left")
-RODLENGTH = 1 #Defines the length of each side of the rod. When RODLENGTH = 0, the "rod" is 1x1.
+#Defines the length of each side of the rod. When RODLENGTH = 0, the "rod" is 1x1.
+RODLENGTH = 1
 
-class SolutionSTR:
-    moves = ""
+
+class SolutionTracker:
+    movesSTR = ""
     totalMoves = 0
-    depth = 0
+    currentMoves = 0
     bestSolution = float("inf")
-
-SolutionSTR.moves += "START"
-
+    bestPossibleSolution = -1
 
 def solution(labyrinth):
+
+    SolutionTracker.movesSTR += "START"
+    SolutionTracker.bestPossibleSolution = len(labyrinth) + len(labyrinth[0]) - 2 - RODLENGTH*2
+
     root = Node(1, 0, True)
     bestSolution = SearchSolution(root, 0)
     print("Best Solution: "+str(bestSolution))
-    #print(SolutionSTR.moves)
 
 
 def SearchSolution(node, moves):
     bs = float("inf")
+
+    if bestSolutionFound():
+        return bs
+    
     #Check for end condition
     if isSolution(node):
-        SolutionSTR.moves += ",GOAL"
+        SolutionTracker.movesSTR += ",GOAL"
+        if(moves < SolutionTracker.bestSolution):
+            SolutionTracker.bestSolution = moves
         return moves
+    
+    if isWorstSolution(moves):
+        return bs
     
     for action in ACTIONS:
         if(not isValid(node, action)):
             continue
 
         node.createChild(action)
-        SolutionSTR.moves += ","+action
+        goDeeper(node, action)
         partial = SearchSolution(node.getChild(action), moves + 1)
         goBack(node.getChild(action))
         if(partial < bs):
             bs = partial
-    
-    
+
     return bs
 
+def isWorstSolution(moves):
+    return moves >= SolutionTracker.bestSolution
+
+def bestSolutionFound():
+    return SolutionTracker.bestPossibleSolution == SolutionTracker.bestSolution
+
 def goBack(node):
-    SolutionSTR.moves += ",BACK"
+    SolutionTracker.movesSTR += ",BACK"
+    SolutionTracker.currentMoves -= 1
+
     if(node.horizontal):
         visitedHorizontal[node.y][node.x] = False
     else:
         visitedVertical[node.y][node.x] = False
+
+def goDeeper(node,action):
+    SolutionTracker.movesSTR += ","+action
+    SolutionTracker.currentMoves += 1
+    SolutionTracker.totalMoves += 1
+
+    if(node.horizontal):
+        visitedHorizontal[node.y][node.x] = True
+    else:
+        visitedVertical[node.y][node.x] = True
     
 def isSolution(node):
     fx = len(labyrinth[0])-1     #Goal position X
@@ -112,19 +141,19 @@ def isValid(node, action):
         return False
     elif(not horizontal and visitedVertical[y][x]):    #Has been visited in vertical position
         return False
-    
-    if(horizontal):
-        visitedHorizontal[y][x] = True
-    else:
-        visitedVertical[y][x] = True
+
     return True
 
-labyrinth = [[".",".",".",".","."],
-             [".","#",".",".","."],
-             [".",".",".",".","."],
-             [".",".",".","#","."],
-             [".",".",".",".","."]]
-
+labyrinth = [[".",".",".",".",".",".",".",".",".","."],
+            [".","#",".",".",".",".","#",".",".","."],
+            [".","#",".",".",".",".",".",".",".","#"],
+            [".",".",".",".",".",".",".",".","#","."],
+            [".",".",".",".",".",".",".","#",".","."],
+            [".","#","#","#","#",".","#",".",".","."],
+            [".","#",".",".",".","#",".",".",".","."],
+            [".",".",".",".",".",".","#",".",".","."],
+            [".",".",".",".",".",".",".",".",".","."],
+            [".",".",".",".",".",".",".",".",".","."]]
 #Init visited matrix
 visitedHorizontal = [[ False for x in range(len(labyrinth[0])) ] for y in range(len(labyrinth)) ]
 visitedVertical = [[ False for x in range(len(labyrinth[0])) ] for y in range(len(labyrinth)) ]
