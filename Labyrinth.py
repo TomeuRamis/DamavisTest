@@ -1,98 +1,129 @@
 from Node import Node
-#Performable actions ordered by preference. Not mutable during runtime.
-actions = ("down", "right", "up", "left")
 
-Depth = 0
-bestSolution = float("inf")
+#Performable actions ordered by preference. Not mutable during runtime.
+ACTIONS = ("down", "right", "rotate", "up", "left")
+RODLENGTH = 1 #Defines the length of each side of the rod. When RODLENGTH = 0, the "rod" is 1x1.
+
+class SolutionSTR:
+    moves = ""
+    totalMoves = 0
+    depth = 0
+    bestSolution = float("inf")
+
+SolutionSTR.moves += "START"
 
 
 def solution(labyrinth):
     root = Node(1, 0, True)
     bestSolution = SearchSolution(root, 0)
     print("Best Solution: "+str(bestSolution))
+    #print(SolutionSTR.moves)
+
 
 def SearchSolution(node, moves):
     bs = float("inf")
     #Check for end condition
     if isSolution(node):
+        SolutionSTR.moves += ",GOAL"
         return moves
     
-    for action in actions:
+    for action in ACTIONS:
         if(not isValid(node, action)):
             continue
 
         node.createChild(action)
-        moves = SearchSolution(node.getChild(action), moves + 1)
-        if(moves < bs):
-            bs = moves
+        SolutionSTR.moves += ","+action
+        partial = SearchSolution(node.getChild(action), moves + 1)
+        goBack(node.getChild(action))
+        if(partial < bs):
+            bs = partial
+    
     
     return bs
 
+def goBack(node):
+    SolutionSTR.moves += ",BACK"
+    if(node.horizontal):
+        visitedHorizontal[node.y][node.x] = False
+    else:
+        visitedVertical[node.y][node.x] = False
     
 def isSolution(node):
     fx = len(labyrinth[0])-1     #Goal position X
     fy = len(labyrinth)-1  #Goal position Y
 
     if(node.horizontal):    #Rod position
-        x = node.x + 1
+        x = node.x + RODLENGTH
         y = node.y
     else:
         x = node.x
-        y = node.y + 1
+        y = node.y + RODLENGTH
 
     return (x == fx and y == fy)
 
 def isValid(node, action):
-    if action == "rotate":
-        #TODO check if posible
-        print("Rotate")
-
+    
+    horizontal = node.horizontal
+    x = node.x
+    y = node.y
+    
     match action:
         case "up":
-            x = node.x
-            y = node.y - 1
+            y = y - 1
         case "down":
-            x = node.x
-            y = node.y + 1
+            y = y + 1
         case "right":
-            x = node.x + 1
-            y = node.y
+            x = x + 1
         case "left":
-            x = node.x - 1
-            y = node.y
+            x = x - 1
+        case "rotate":
+            horizontal = not horizontal
             
-    if(node.horizontal):
-        xl = x-1
-        xr = x+1
+    if(horizontal):
+        xl = x-RODLENGTH
+        xr = x+RODLENGTH
         yt = y
         yb = y
     else:
         xl = x
         xr = x
-        yt = y-1
-        yb = y+1
+        yt = y-RODLENGTH
+        yb = y+RODLENGTH
 
+    if action == "rotate":
+        #Check the 9x9 square for walls or obstacles
+        for xi in range(x-RODLENGTH, x+RODLENGTH+1):
+            for yi in range(y-RODLENGTH, y+RODLENGTH+1):
+                if((xi < 0 or xi >= len(labyrinth[0])) or (yi < 0 or yi >= len(labyrinth)) or labyrinth[yi][xi] == "#"): 
+                    return False    
+    
     if((xl < 0 or xr >= len(labyrinth[0])) or (yt < 0 or yb >= len(labyrinth))): #Is within constraints
         return False
     
-    #TODO check for obstacles
+    #Check for obstacles
+    for xi in range(xl, xr+1): #Obtstacles in the X axis
+        if(labyrinth[y][xi] == "#"):
+            return False
+    for yi in range(yt, yb+1): #Obtstacles in the Y axis
+        if(labyrinth[yi][x] == "#"):
+            return False    
 
-    if(node.horizontal and visitedHorizontal[y][x]): #Has been visited in horizontal position
+    if(horizontal and visitedHorizontal[y][x]): #Has been visited in horizontal position
         return False
-    elif(not node.horizontal and visitedVertical[y][x]):    #Has been visited in vertical position
+    elif(not horizontal and visitedVertical[y][x]):    #Has been visited in vertical position
         return False
     
-    if(node.horizontal):
+    if(horizontal):
         visitedHorizontal[y][x] = True
     else:
         visitedVertical[y][x] = True
     return True
 
 labyrinth = [[".",".",".",".","."],
-            [".",".",".",".","."],
-            [".",".",".",".","."],
-            [".",".",".",".","."],
-            [".",".",".",".","."]]
+             [".","#",".",".","."],
+             [".",".",".",".","."],
+             [".",".",".","#","."],
+             [".",".",".",".","."]]
 
 #Init visited matrix
 visitedHorizontal = [[ False for x in range(len(labyrinth[0])) ] for y in range(len(labyrinth)) ]
