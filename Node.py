@@ -1,6 +1,6 @@
 
 class Node:
-    def __init__(self, x, y, horizontal):
+    def __init__(self, y, x, horizontal):
         self.x = x  #Position on the X axis
         self.y = y  #Position on the Y axis
         self.horizontal = horizontal  #Orientation of the rod
@@ -15,20 +15,21 @@ class Node:
         
         return s1 + s2
 
-
+    #Create a child of the node based on the action to do
     def createChild(self, action):
         match action:
             case "up":
-                self.children[0] = Node(self.x, self.y - 1, self.horizontal) 
+                self.children[0] = Node(self.y - 1,self.x, self.horizontal) 
             case "down":
-                self.children[1] = Node(self.x, self.y + 1, self.horizontal) 
+                self.children[1] = Node(self.y + 1, self.x, self.horizontal) 
             case "right":
-                self.children[2] = Node(self.x + 1, self.y, self.horizontal) 
+                self.children[2] = Node( self.y, self.x + 1, self.horizontal) 
             case "left":
-                self.children[3] = Node(self.x - 1, self.y, self.horizontal) 
+                self.children[3] = Node(self.y, self.x - 1, self.horizontal) 
             case "rotate":
-                self.children[4] = Node(self.x, self.y, not self.horizontal) 
+                self.children[4] = Node( self.y, self.x, not self.horizontal) 
 
+    #Get the child based on the action
     def getChild(self, action):
         match action:
             case "up":
@@ -41,16 +42,3 @@ class Node:
                 return self.children[3]
             case "rotate":
                 return self.children[4]
-    
-    def deleteChild(self, action):
-        match action:
-            case "up":
-                self.children[0] = None
-            case "down":
-                self.children[0] = None
-            case "right":
-                self.children[0] = None
-            case "left":
-                self.children[0] = None
-            case "rotate":
-                self.children[0] = None
